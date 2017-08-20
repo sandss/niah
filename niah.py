@@ -7,7 +7,7 @@ exit_flag = 0
 lock = Lock()
 task_queue = Queue()
 
-def start_threading(**kwargs):
+def threading(**kwargs):
     global lock, task_queue, exit_flag
     hosts = kwargs['hosts']
     max_threads = kwargs['max_threads']
@@ -47,11 +47,11 @@ def worker(activity):
         if not task_queue.empty():
             ip = task_queue.get() # Get the host from the queue
             lock.release()
-            task(ip,activity)
+            run(ip,activity)
         else:
             lock.release()
 
-def task(host,activity):
+def run(host,activity):
     execfile(activity)
 
 if __name__ == '__main__':
@@ -93,20 +93,20 @@ if __name__ == '__main__':
     for k,v in arguments.iteritems():
         parser.add_argument(k,**v)
 
-    arg_vals = parser.parse_args()
+    arg = parser.parse_args()
 
-    thread = arg_vals.thread
+    thread = arg.thread
 
     if type(arg_vals.hosts) == file:
-        hosts = arg_vals.hosts.read().splitlines()
+        hosts = arg.hosts.read().splitlines()
     else:
-        hosts = arg_vals.hosts
+        hosts = arg.hosts
 
-    activity = arg_vals.activity
+    activity = arg.activity
 
     #Set max number of threads
     if thread == True:
-        start_threading(hosts=hosts,max_threads=50,activity=activity)
+        threading(hosts=hosts,max_threads=50,activity=activity)
     else:
         for host in hosts:
-            task(host, activity)
+            run(host, activity)
