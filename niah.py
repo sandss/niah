@@ -17,7 +17,7 @@ def start_threading(**kwargs):
     #set thread list
     threads = []
     for i in range(max_threads):
-        thread = Thread(target=worker)
+        thread = Thread(target=worker,args=kwargs['activity'])
         thread.start()
         threads.append(thread)
 
@@ -40,19 +40,19 @@ def start_threading(**kwargs):
     for t in threads:
         t.join()
 
-def worker():
+def worker(activity):
     global lock, task_queue, exit_flag
     while not exit_flag:
         lock.acquire() #lock child thread and wait to receive data from parent thread
         if not task_queue.empty():
             ip = task_queue.get() # Get the host from the queue
             lock.release()
-            task(ip)
+            task(ip,activity)
         else:
             lock.release()
 
-def task(host):
-    print 'Recieved host %s'%(host)
+def task(host,activity):
+    execfile(activity)
 
 if __name__ == '__main__':
     #Set up system arguments
@@ -82,24 +82,31 @@ if __name__ == '__main__':
                             'dest': 'hosts',
                             'help':'specify hosts from file',
                             'type': argparse.FileType('r')
+                    },
+                    '-a':{
+                            'dest':'activity',
+                            'help':'sepcify which activity to run (from file that contains python)',
+                            'type': str
                     }
                 }
-
-
 
     for k,v in arguments.iteritems():
         parser.add_argument(k,**v)
 
     arg_vals = parser.parse_args()
 
-    if not type(arg_vals.hosts) == file:
-        hosts = arg_vals.hosts
-    else:
+    thread = arg_vals.thread
+
+    if type(arg_vals.hosts) == file:
         hosts = arg_vals.hosts.read().splitlines()
+    else:
+        hosts = arg_vals.hosts
+
+    activity = arg_vals.activity
 
     #Set max number of threads
     if thread == True:
-        start_threading(hosts=hosts,max_threads=50)
+        start_threading(hosts=hosts,max_threads=50,activity=activity)
     else:
         for host in hosts:
-            task(host)
+            task(host, activity)
