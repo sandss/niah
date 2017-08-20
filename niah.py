@@ -1,5 +1,6 @@
 from threading import Thread, Lock
 from Queue import Queue
+import argparse
 
 thread = True
 exit_flag = 0
@@ -16,7 +17,7 @@ def start_threading(**kwargs):
     #set thread list
     threads = []
     for i in range(max_threads):
-        thread = NiahThreading()
+        thread = Thread(target=worker)
         thread.start()
         threads.append(thread)
 
@@ -39,24 +40,66 @@ def start_threading(**kwargs):
     for t in threads:
         t.join()
 
-class NiahThreading(Thread):
+def worker():
+    global lock, task_queue, exit_flag
+    while not exit_flag:
+        lock.acquire() #lock child thread and wait to receive data from parent thread
+        if not task_queue.empty():
+            ip = task_queue.get() # Get the host from the queue
+            lock.release()
+            task(ip)
+        else:
+            lock.release()
 
-    def __init__(self):
-        Thread.__init__(self)
-
-    def run(self):
-        global lock, task_queue, exit_flag
-        while not exit_flag:
-            lock.acquire() #lock child thread and wait to receive data from parent thread
-            if not task_queue.empty():
-                ip = task_queue.get()
-                lock.release()
-                print 'Recieved host in Thread %s'%(ip)
-            else:
-                lock.release()
-
+def task(host):
+    print 'Recieved host %s'%(host)
 
 if __name__ == '__main__':
+    #Set up system arguments
+    parser = argparse.ArgumentParser()
+
+    arguments = {
+                    '-d':{
+                            'choices': range(1,5),
+                            'dest':'debug',
+                            'type': int,
+                            'help': 'set debug level 1=Critical, 2=Warning, 3=Info, 4=Debug',
+                            'default': 0
+                        },
+                    '--thread':{
+                            'action':'store_true',
+                            'dest':'thread',
+                            'help':'use threading',
+                            'default': False
+                    },
+                    '--hosts':{
+                            'action':'append',
+                            'dest':'hosts',
+                            'nargs':'*',
+                            'help':'specify hosts'
+                    },
+                    '-f':{
+                            'dest': 'hosts',
+                            'help':'specify hosts from file',
+                            'type': argparse.FileType('r')
+                    }
+                }
+
+
+
+    for k,v in arguments.iteritems():
+        parser.add_argument(k,**v)
+
+    arg_vals = parser.parse_args()
+
+    if not type(arg_vals.hosts) == file:
+        hosts = arg_vals.hosts
+    else:
+        hosts = arg_vals.hosts.read().splitlines()
+
     #Set max number of threads
     if thread == True:
-        start_threading(hosts=[1,2,3,4],max_threads=50)
+        start_threading(hosts=hosts,max_threads=50)
+    else:
+        for host in hosts:
+            task(host)
