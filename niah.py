@@ -1,6 +1,7 @@
 from threading import Thread, Lock
 from Queue import Queue
 import argparse
+from devices import IOS
 
 thread = True
 exit_flag = 0
@@ -52,7 +53,12 @@ def worker(activity):
             lock.release()
 
 def run(host,activity):
-    execfile(activity)
+    if device['type'] == 'wireless':
+        print 'null'
+    if device['type'] == 'router':
+        print 'null'
+    if device['type'] == 'firewall':
+        print 'null'
 
 if __name__ == '__main__':
     #Set up system arguments
