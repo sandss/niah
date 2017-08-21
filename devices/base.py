@@ -1,5 +1,6 @@
 import pexpect
 from niah import errors
+
 class BaseDevice(object):
     #TODO: Add logging
     def __init__ (self,session):
@@ -25,7 +26,7 @@ class BaseIOS(BaseDevice):
 
     def cmd(self,command):
         #self.logger.info("Sending Command: %s"%(command))
-        self.logger.debug(self.child.before)
+        #self.logger.debug(self.child.before)
         self.write(command)
 
         if self.hostname is not None:
